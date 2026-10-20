@@ -1,67 +1,60 @@
 package com.company.openclose;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-public class InternetSessionHistory {
+/** Stores internet sessions, with their usage expressed in data units. */
+public class InternetSessionHistory implements UsageHistory {
 
     public static class InternetSession {
-        
-        private LocalDateTime begin;
+        private final LocalDateTime begin;
+        private final Long subscriberId;
+        private final long dataUsed;
 
-        private Long subscriberId;
-
-        private Long dataUsed;
-        
         public InternetSession(Long subscriberId, LocalDateTime begin, long dataUsed) {
             this.begin = begin;
             this.dataUsed = dataUsed;
             this.subscriberId = subscriberId;
         }
 
-        /**
-         * @return the begin
-         */
         public LocalDateTime getBegin() {
             return begin;
         }
 
-        /**
-         * @return the data used
-         */
         public long getDataUsed() {
             return dataUsed;
         }
 
-        /**
-         * @return the subscriber
-         */
         public Long getSubscriberId() {
             return subscriberId;
         }
-
-    }
-    private static final Map<Long, List<InternetSession>> SESSIONS = new HashMap<>();
-
-    public synchronized static List<InternetSession> getCurrentSessions(Long subscriberId) {
-        if(!SESSIONS.containsKey(subscriberId)) {
-            return Collections.emptyList();
-        }
-        return SESSIONS.get(subscriberId);
     }
 
-    public synchronized static void addSession(Long subscriberId, LocalDateTime begin, long dataUsed) {
-        List<InternetSession> sessions;
-        if(!SESSIONS.containsKey(subscriberId)) {
-            sessions = new LinkedList<>();
-            SESSIONS.put(subscriberId, sessions);
-        } else {
-            sessions = SESSIONS.get(subscriberId);
+    private final Map<Long, List<InternetSession>> sessionsBySubscriber = new HashMap<>();
+
+    public synchronized List<InternetSession> getCurrentSessions(Long subscriberId) {
+        List<InternetSession> sessions = sessionsBySubscriber.get(subscriberId);
+        return sessions == null
+                ? Collections.<InternetSession>emptyList()
+                : Collections.unmodifiableList(new ArrayList<>(sessions));
+    }
+
+    @Override
+    public synchronized void addSession(Long subscriberId, LocalDateTime begin, long dataUsed) {
+        sessionsBySubscriber.computeIfAbsent(subscriberId, id -> new ArrayList<>())
+                .add(new InternetSession(subscriberId, begin, dataUsed));
+    }
+
+    @Override
+    public synchronized long getTotalUsage(Long subscriberId) {
+        List<InternetSession> sessions = sessionsBySubscriber.get(subscriberId);
+        if (sessions == null) {
+            return 0;
         }
-        sessions.add(new InternetSession(subscriberId, begin, dataUsed));
+        return sessions.stream().mapToLong(InternetSession::getDataUsed).sum();
     }
 }
