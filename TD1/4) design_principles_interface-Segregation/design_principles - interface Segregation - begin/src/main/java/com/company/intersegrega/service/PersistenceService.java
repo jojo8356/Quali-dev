@@ -1,17 +1,20 @@
 package com.company.intersegrega.service;
 
-import java.util.List;
-
 import com.company.intersegrega.entity.Entity;
 
-//common interface to be implemented by all persistence services. 
+/**
+ * Common persistence contract shared by every entity.
+ *
+ * <p>Only the operations that make sense for <em>all</em> entities are declared
+ * here: save, delete and find by identifier. Anything that is specific to a
+ * given entity (e.g. searching a user by name) belongs to a dedicated
+ * interface, so that other entities are not forced to implement it.</p>
+ */
 public interface PersistenceService<T extends Entity> {
 
-  public void save(T entity);
+  void save(T entity);
 
-  public void delete(T entity);
+  void delete(T entity);
 
-  public T findById(Long id);
-
-  public List<T> findByName(String name);
+  T findById(Long id);
 }

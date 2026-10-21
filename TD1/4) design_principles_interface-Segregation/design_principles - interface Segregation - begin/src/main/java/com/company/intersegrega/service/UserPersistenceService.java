@@ -7,8 +7,8 @@ import java.util.stream.Collectors;
 
 import com.company.intersegrega.entity.User;
 
-//Stores User entities
-public class UserPersistenceService implements PersistenceService<User> {
+//Stores User entities. Users do have a name, so this service can expose findByName.
+public class UserPersistenceService implements NameSearchablePersistenceService<User> {
 
   private static final Map<Long, User> USERS = new HashMap<>();
 
@@ -36,8 +36,9 @@ public class UserPersistenceService implements PersistenceService<User> {
   @Override
   public List<User> findByName(String name) {
     synchronized (USERS) {
-      return USERS.values().stream().filter(u -> u.getName().equalsIgnoreCase(name)).collect(Collectors.toList());
+      return USERS.values().stream()
+          .filter(user -> user.getName() != null && user.getName().equalsIgnoreCase(name))
+          .collect(Collectors.toList());
     }
   }
-
 }
